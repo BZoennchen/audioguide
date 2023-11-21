@@ -42,6 +42,6 @@ if __name__ == "__main__":
     response = ChatGPT().question('Beschreibe das Bild der Mona Lisa')
     #wiki_wiki = wikipediaapi.Wikipedia('MyProjectName (merlin@example.com)', 'en')
     #page_py = wiki_wiki.page('Python_(programming_language)')
-    #text2speech.text_to_speech_openai(response, 'mona_lisa_openai.wav')
+    text2speech.text_to_speech_openai(response, 'mona_lisa_openai.wav')
     text = speech2text.speech_to_text_openai('mona_lisa_openai.wav')
     print(text)
