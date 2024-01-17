@@ -13,3 +13,14 @@ def text_to_speech_openai(text: str, filename):
         input=text
     )
     response.stream_to_file(filename)
+    
+    
+def text_to_speech_openai_streamed(text: str):
+    client = OpenAI()
+
+    response = client.audio.speech.create(
+        model="tts-1",
+        voice="alloy",
+        input=text
+    )
+    return response

@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dein persönlicher Audioguide</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 20px;
+        }
+
+        #welcome {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+
+        #popup {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: #f9f9f9;
+            padding: 20px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+        }
+
+        #ageInput, #interestSelect {
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div>
+        <h1 id="welcome">Willkommen bei deinem persönlichen Audioguide!</h1>
+        <button id="startButton" onclick="showPopup()">Starten</button>
+    </div>
+
+    <div id="popup">
+        <form action="/questionpage" method="POST">
+        <label for="ageInput">Wie alt sind Sie?</label>
+        <select name="ageInput">
+            <option value="kind">Kind</option>
+            <option value="jugendlich">Jugendlich</option>
+            <option value="erwachsen">Erwachsen</option>
+        </select>
+
+        <br>
+
+        <label for="interestSelect">Wählen Sie Ihre Interessen:</label>
+        <select name="interestSelect">
+            <option value="Maltechniken">Maltechniken</option>
+            <option value="Kunstgeschichte">Kunstgeschichte</option>
+            <option value="Kontext">Kontext</option>
+            <option value="Biografie">Biografie</option>
+        </select>
+
+        <br>
+
+        <label for="frequenceSelect">Wie oft gehern Sie ins Museum?:</label>
+        <select name="frequenceSelect">
+            <option value="Selten">0-1 mal pro Jahr</option>
+            <option value="manchmal">1-2 mal pro Jahr</option>
+            <option value="regelmäßig">2+ mal pro Jahr</option>
+        </select>
+        <br>
+        <!--<button id="finishButton" onclick="closePopupAndRedirect()">Fertig</button>-->
+        <input id="finishButton" type="submit" value="Fertig">
+    </form>
+    </div>
+
+
+    <p>This is the latest output: <span id="latest"></span></p>
+    <p>This is all the output:</p>
+    <ul id="output"></ul>
+
+    <script>
+        function showPopup() {
+            document.getElementById('popup').style.display = 'block';
+        }
+
+        function closePopupAndRedirect() {
+            // Hier kannst du die Logik für die Weiterleitung implementieren
+            // Zum Beispiel könntest du window.location.href verwenden
+            window.location.href = 'questionpage';
+        }
+
+        function showPopup() {
+            document.getElementById('popup').style.display = 'block';
+        }
+        function playAudio(text) {
+            var audio = new Audio('/text_to_speech/filename?text=' + encodeURIComponent(text));
+            audio.play();
+        }
+
+        var latest = document.getElementById('latest');
+        var output = document.getElementById('output');
+        var xhr = new XMLHttpRequest();
+        xhr.open('GET', '/text_to_text?user_prompt="text")');
+        xhr.send();
+        var position = 0;
+
+        function handleNewData() {
+            // the response text include the entire response so far
+            // split the messages, then take the messages that haven't been handled yet
+            // position tracks how many messages have been handled
+            // messages end with a newline, so split will always show one extra empty message at the end
+            var messages = xhr.responseText.split('\n');
+            messages.slice(position, -1).forEach(function(value) {
+                latest.textContent = value;  // update the latest value in place
+                // build and append a new item to a list to log all output
+                var item = document.createElement('li');
+                item.textContent = value;
+                output.appendChild(item);
+            });
+            position = messages.length - 1;
+        }
+
+        var timer;
+        timer = setInterval(function() {
+            // check the response for new data
+            handleNewData();
+            // stop checking once the response has ended
+            if (xhr.readyState == XMLHttpRequest.DONE) {
+                clearInterval(timer);
+                latest.textContent = 'Done';
+            }
+        }, 1000);
+    </script>
+
+<button onclick="playAudio('Hello, world!')">Play Text-to-Speech</button>
+
+</body>
+</html>

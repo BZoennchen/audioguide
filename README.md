@@ -15,3 +15,8 @@ Go to API.
 Then go to Quickstart.
 **Step 2: Setup your API key** (Windows / Mac) and do those steps.
 
+## Run the App
+
+```
+python -m flask --app app run --debug 
+```
