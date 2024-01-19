@@ -34,6 +34,88 @@
             margin-bottom: 10px;
         }
     </style>
+    <script>
+        function showPopup() {
+            document.getElementById('popup').style.display = 'block';
+        }
+
+        function closePopupAndRedirect() {
+            // Hier kannst du die Logik für die Weiterleitung implementieren
+            // Zum Beispiel könntest du window.location.href verwenden
+            window.location.href = 'questionpage';
+        }
+
+        function showPopup() {
+            document.getElementById('popup').style.display = 'block';
+        }
+
+        function playAudio(text) {
+            var audio = new Audio('/text_to_speech/filename?text=' + encodeURIComponent(text));
+            audio.play();
+        }
+
+        
+        function start() {
+            var latest = document.getElementById('latest');
+            var output = document.getElementById('output');
+            var xhr = new XMLHttpRequest();
+            xhr.open('GET', '/text_to_text?user_prompt="text")');
+            xhr.send();
+            var position = 0;
+
+            var playing = false;
+            var audio;
+            var chunks = []
+            
+            function handleNewData() {
+                // the response text include the entire response so far
+                // split the messages, then take the messages that haven't been handled yet
+                // position tracks how many messages have been handled
+                // messages end with a newline, so split will always show one extra empty message at the end
+                var messages = xhr.responseText.split('\n');
+                messages.slice(position, -1).forEach(function(value) {
+                    latest.textContent = value;  // update the latest value in place
+                    // build and append a new item to a list to log all output
+                    var item = document.createElement('li');
+                    item.textContent = value;
+                    output.appendChild(item);
+                    if (value.length > 0) {
+                        chunks.push(value);
+                    }
+                });
+                position = messages.length - 1;
+            }
+
+            function playChunk() {
+                if (playing != true && chunks.length > 0) {
+                    playing = true;
+                    audio = new Audio('/text_to_speech/filename?text=' + encodeURIComponent(chunks.shift()));
+                    audio.play();
+                    audio.addEventListener("ended", function(){
+                        playing = false;
+                    });
+                }
+            }
+
+            var timer;
+            var playTimer;
+            timer = setInterval(function() {
+                // check the response for new data
+                handleNewData();
+                // stop checking once the response has ended
+                if (xhr.readyState == XMLHttpRequest.DONE) {
+                    clearInterval(timer);
+                    latest.textContent = 'Done';
+                }
+            }, 1000);
+
+            playTimer = setInterval(function() {
+                // check the response for new data
+                playChunk();
+            }, 1000);
+        }
+        
+    </script>
 </head>
 <body>
     <div>
@@ -79,61 +161,9 @@
     <p>This is all the output:</p>
     <ul id="output"></ul>
 
-    <script>
-        function showPopup() {
-            document.getElementById('popup').style.display = 'block';
-        }
-
-        function closePopupAndRedirect() {
-            // Hier kannst du die Logik für die Weiterleitung implementieren
-            // Zum Beispiel könntest du window.location.href verwenden
-            window.location.href = 'questionpage';
-        }
-
-        function showPopup() {
-            document.getElementById('popup').style.display = 'block';
-        }
-        function playAudio(text) {
-            var audio = new Audio('/text_to_speech/filename?text=' + encodeURIComponent(text));
-            audio.play();
-        }
-
-        var latest = document.getElementById('latest');
-        var output = document.getElementById('output');
-        var xhr = new XMLHttpRequest();
-        xhr.open('GET', '/text_to_text?user_prompt="text")');
-        xhr.send();
-        var position = 0;
-
-        function handleNewData() {
-            // the response text include the entire response so far
-            // split the messages, then take the messages that haven't been handled yet
-            // position tracks how many messages have been handled
-            // messages end with a newline, so split will always show one extra empty message at the end
-            var messages = xhr.responseText.split('\n');
-            messages.slice(position, -1).forEach(function(value) {
-                latest.textContent = value;  // update the latest value in place
-                // build and append a new item to a list to log all output
-                var item = document.createElement('li');
-                item.textContent = value;
-                output.appendChild(item);
-            });
-            position = messages.length - 1;
-        }
-
-        var timer;
-        timer = setInterval(function() {
-            // check the response for new data
-            handleNewData();
-            // stop checking once the response has ended
-            if (xhr.readyState == XMLHttpRequest.DONE) {
-                clearInterval(timer);
-                latest.textContent = 'Done';
-            }
-        }, 1000);
-    </script>
+    
 
 <button onclick="playAudio('Hello, world!')">Play Text-to-Speech</button>
-
+<button onclick="start()">Go</button>
 </body>
 </html>

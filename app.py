@@ -1,5 +1,5 @@
 import logging
-from flask import Flask, Response, render_template, request, send_from_directory, stream_with_context, send_file
+from flask import Flask, Response, render_template, request, send_from_directory, url_for, redirect, stream_with_context, send_file
 from turbo_flask import Turbo
 from audioguide import ChatGPT
 import speech2text
@@ -50,40 +50,44 @@ def process_recording():
     entry = {'id': len(history), 'user_prompt': user_prompt, 'response': "", 'user_audio': request_file, 'response_audio': None}
     entry.update(config)
     history.append(entry)
-    turbo.push(turbo.replace(render_template('history.html', history=history), f'responseHistory'))
-    if "stop" in str(user_prompt).lower():
-        entry['response'] = "Recording stopped."
-    else:
-        gpt = ChatGPT(*config)
+        
+    gpt = ChatGPT(*config)
+    def generate():
         gpt_response = ""
+        acc = ""
         for chunk in gpt.question_streamed(user_prompt):
-            if chunk != None:
-                gpt_response += chunk
-                entry['response'] = gpt_response
-                turbo.push(turbo.replace(render_template('botresponse.html', entry=entry), f'response{entry['id']}'))
+            gpt_response += chunk
+            acc += chunk
+            entry['response'] = gpt_response
+            yield chunk
+        response_file =  f'response-{time.strftime("%Y%m%d-%H%M%S")}.mp3'
+        entry['response_audio'] = response_file
+        text2speech.text_to_speech_openai(gpt_response, f'audio/responses/{response_file}')
     
-    
-    # 4. Chatbot answer to speech, TODO: this takes a lot of time!
-    response_file =  f'response-{time.strftime("%Y%m%d-%H%M%S")}.mp3'
-    text2speech.text_to_speech_openai(gpt_response, f'audio/responses/{response_file}')
-    entry['response_audio'] = response_file
-
-    turbo.push(turbo.replace(render_template('history.html', history=history), f'responseHistory'))
-    return "Audio received, saved, and processed", 200
+    return app.response_class(stream_with_context(generate()), mimetype='text/event-stream') 
     
 
 @app.route('/audio/responses/<path:filename>')
 def download_file(filename):
+    """
+        Sends back an audio file.
+    """    
     return send_from_directory('audio/responses/', filename)
 
 @app.route('/text_to_text')
 def text_to_text():
+    """Streams the text based on a user prompted contained in the request back as response.
+
+    Returns:
+        the streamed text
+    """
+    
     user_prompt = request.args.get('user_prompt')
     gpt = ChatGPT(*config)
     
     def generate():
         for chunk in gpt.question_streamed(user_prompt):
-            app.logger.debug(chunk)
+            #app.logger.debug(chunk)
             if chunk != None:
                 yield chunk
     
@@ -92,6 +96,12 @@ def text_to_text():
 
 @app.route('/speech_to_text', methods=['POST'])
 def speech_to_text():
+    """Returns the plain text generated out of speech as response.
+ 
+    Returns:
+        plain text
+    """
+    
     timestr = time.strftime("%Y%m%d-%H%M%S")
     request_file = f'request-{timestr}.webm'
     audio_file = request.files['audio']
@@ -103,6 +113,16 @@ def speech_to_text():
 
 @app.route('/text_to_speech/<path:filename>')
 def text_to_speech(filename):
+    """Streams audio generated of a text of the request into a file.
+       The file is send back as response.
+
+    Args:
+        filename (str): filename where the generated speech is streamed to
+
+    Returns:
+        the streamed file
+    """
+    
     text = request.args.get('text')
     text2speech.text_to_speech_openai(text, f'audio/responses/{filename}')
     return send_file(f'audio/responses/{filename}', mimetype='audio/mp3')

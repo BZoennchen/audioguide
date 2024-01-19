@@ -152,8 +152,30 @@ function visualize(stream) {
   }
 }
 
+function playChunk() {
+  document.getElementById('historyList').lastElementChild.querySelector('audio');
+  console.log(document.getElementById('historyList').lastElementChild);
+
+  if (playing != true && chunks.length > 0) {
+    playing = true;
+    audio = new Audio('/text_to_speech/filename?text=' + encodeURIComponent(chunks.shift()));
+    audio.play();
+    audio.addEventListener("ended", function () {
+      playing = false;
+    });
+  }
+}
+
+
+var playTimer;
+playTimer = setInterval(function () {
+  // check the response for new data
+  playChunk();
+}, 1000);
+
 window.onresize = function() {
   canvas.width = mainSection.offsetWidth;
 }
 
 window.onresize();
+

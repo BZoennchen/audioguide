@@ -1,1 +1,10 @@
 <li id="response{{ entry['id'] }}">Antwort: {{ entry['response'] }}</li>
+{% if text != None %}
+<script>
+    function playAudio(text) {
+        var audio = new Audio('/text_to_speech/filename?text=' + encodeURIComponent({{ text }}));
+        audio.play();
+    }
+    playAudio("{{ entry['response'] }}");
+</script>
+{% endif %}
