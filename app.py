@@ -35,10 +35,9 @@ def question_page():
 
 @app.route('/ask_question')
 def process_recording():
-    filename = request.args.get('filename')
     id = int(request.args.get('id'))
     entry = history[id]
-    app.logger.debug(f'/ask_question: {filename}')
+    app.logger.debug(f'/ask_question: {id}')
     user_prompt = entry['user_prompt']
     
     # 3. User request to chatbot answer        
@@ -53,6 +52,8 @@ def process_recording():
                 entry['response'] = gpt_response
                 app.logger.debug(chunk)
                 yield f'data: {chunk}\n\n'
+        yield "data: END_OF_STREAM\n\n"
+        
         app.logger.debug('End of generation')
         response_file =  f'response-{time.strftime("%Y%m%d-%H%M%S")}.mp3'
         
@@ -66,7 +67,7 @@ def upload_user_audio_request():
     if 'audio' in request.files:
        # 1. Audio of the user to audio file
         timestr = time.strftime("%Y%m%d-%H%M%S")
-        request_file = f'request-{timestr}.webm'
+        request_file = f'request-{timestr}.mp3'
         audio_file = request.files['audio']
         audio_file.save(f'audio/requests/{request_file}')
         audio_file.flush()

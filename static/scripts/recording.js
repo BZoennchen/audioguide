@@ -55,8 +55,7 @@ if (navigator.mediaDevices.getUserMedia) {
       const blob = new Blob(chunks, { 'type': 'audio/webm' });
       chunks = [];
       console.log("recorder stopped");
-
-      sendAudioToServer(blob)
+      sendUserAudioToServer(blob);
     }
 
     mediaRecorder.ondataavailable = function(e) {
@@ -74,86 +73,8 @@ if (navigator.mediaDevices.getUserMedia) {
    console.log('getUserMedia not supported on your browser!');
 }
 
-function sendAudioToServer(audioBlob) {
-  const formData = new FormData();
-  //formData.append("audio", audioBlob);
-  formData.append('audio', audioBlob, 'audioToSave.webm')
-  fetch('/upload_audio', {
-    method: 'POST',
-    body: formData
-  }).then(response => {
-    // Handle the response. Possibly the server returns a unique ID for the audio processing task
-    let text = response.text();
-    console.log('reponse: ' + text);
-    return text;
-  }).then(request_file => {
-    // Use this task ID to listen for server-sent events
-    console.log('request_file: ' + request_file);
-    let json = JSON.parse(request_file);
-    let filename = json.request_file
-    let id = json.id
-    listen_for_server_text_response(filename, id);
-    
-  }).catch(error => {
-    console.error('Error:', error);
-  });
-}
-
-function listen_for_server_text_response(filename, id) {
-  // Replace '/ask_question' with your SSE endpoint
-  // You can pass the task ID as a query parameter if needed
-  const eventSource = new EventSource(`/ask_question?filename=${filename}&id=${id}`);
-  let max_len = 200;
-  let current_aggregate = ""
-  let count = 0;
-  let playing = false;
-  let audios = [];
-  eventSource.onmessage = function (event) {
-    console.log('Message:', event.data);
-    console.log("response" + id);
-    let li_response = document.getElementById("response"+id);
-    li_response.innerHTML += event.data;
-    current_aggregate += event.data;
-    
-    if (current_aggregate.length >= max_len) {
-      audios.push(new Audio(`/text_to_speech?filename=${filename + count.toString()}&text=${encodeURIComponent(current_aggregate)}`));
-      current_aggregate = "";
-    }
-    
-    if (!playing && audios.length > 0) {
-      playing = true;
-      let audio = audios.shift();
-      audio.play();
-      audio.addEventListener("ended", audio_ended);
-
-      function audio_ended() { 
-        if (audios.length > 0) {
-          audio = audios.shift();
-          audio.play();
-          audio.addEventListener("ended", audio_ended);
-        }
-      }
-
-      /*audio.addEventListener("ended", function () {
-        audio = new Audio(`/text_to_speech?filename=${filename + count.toString()}&text=${encodeURIComponent(current_aggregate)}`);
-        audio.play();
-      });*/
-    }
-  };
-
-  eventSource.addEventListener('customEvent', function (event) {
-    // Handle custom named events if your server sends them
-    console.log('customEvent:', event.data);
-  });
-
-  eventSource.onerror = function () {
-    console.log('Error occurred.');
-    eventSource.close();
-  };
-}
-
 function visualize(stream) {
-  if(!audioCtx) {
+  if (!audioCtx) {
     audioCtx = new AudioContext();
   }
 
@@ -189,12 +110,12 @@ function visualize(stream) {
     let x = 0;
 
 
-    for(let i = 0; i < bufferLength; i++) {
+    for (let i = 0; i < bufferLength; i++) {
 
       let v = dataArray[i] / 128.0;
-      let y = v * HEIGHT/2;
+      let y = v * HEIGHT / 2;
 
-      if(i === 0) {
+      if (i === 0) {
         canvasCtx.moveTo(x, y);
       } else {
         canvasCtx.lineTo(x, y);
@@ -203,37 +124,148 @@ function visualize(stream) {
       x += sliceWidth;
     }
 
-    canvasCtx.lineTo(canvas.width, canvas.height/2);
+    canvasCtx.lineTo(canvas.width, canvas.height / 2);
     canvasCtx.stroke();
 
   }
 }
 
-/*function playChunk() {
-  document.getElementById('historyList').lastElementChild.querySelector('audio');
-  console.log(document.getElementById('historyList').lastElementChild);
-
-  if (playing != true && chunks.length > 0) {
-    playing = true;
-    audio = new Audio('/text_to_speech/filename?text=' + encodeURIComponent(chunks.shift()));
-    audio.play();
-    audio.addEventListener("ended", function () {
-      playing = false;
-    });
-  }
-}
-
-
-var playTimer;
-playTimer = setInterval(function () {
-  // check the response for new data
-  playChunk();
-}, 1000);
-*/
-
-window.onresize = function() {
+window.onresize = function () {
   canvas.width = mainSection.offsetWidth;
 }
 
 window.onresize();
 
+
+// The following code implements the client server communication for one user (audio) request.
+// The Server translates the audio to text and calls openAI's ChatGPT
+// The answer from ChatGPT is streamed back to the client which fills in the text chunks.
+// Futhermore it gathers chunks until a certain aggregate is available.
+// Then it ask the server to translate the aggregate into audio
+// The audio is queued and if the first audio arrives, the client starts playing
+
+/**
+ * Sends the user audio prompt to the server
+ * 
+ * @param {Blob} audioBlob - The user audio prompt
+ */
+function sendUserAudioToServer(audioBlob) {
+  const formData = new FormData();
+  formData.append('audio', audioBlob, 'audioToSave.webm')
+  fetch('/upload_audio', {
+    method: 'POST',
+    body: formData
+  }).then(response => {
+    let text = response.text();
+    console.log('reponse: ' + text);
+    return text;
+  }).then(request_file => {
+    console.log('request_file: ' + request_file);
+    let json = JSON.parse(request_file);
+    let id = json.id
+    textChunksToPlayedAudio(id);
+    
+  }).catch(error => {
+    console.error('Error:', error);
+  });
+}
+
+/**
+ * This function does all the translation from chunks of text (sent by the server) to played audio.
+ * 
+ * @param {Int} id - number of the entry in the history starting at 0.
+ */
+function textChunksToPlayedAudio(id) {
+  const eventSource = new EventSource(`/ask_question?id=${id}`);
+  let maxLen = 300;
+  let minLen = 120;
+  let currentAggregate = ""
+  let count = 0;
+  let order = 0;
+  let playing = false;
+  
+  let audioContext = new(window.AudioContext || window.webkitAudioContext)();
+  let audioFiles = [];
+  let queue = [];
+
+  function loadAndPlayAudio(url) {
+    // load the result from the server
+    return fetch(url)
+      .then(response => response.arrayBuffer())
+      .then(buffer => audioContext.decodeAudioData(buffer))
+      .then(decodedBuffer => {
+        if (!playing) { 
+          var source = audioContext.createBufferSource();
+          source.buffer = decodedBuffer;
+          source.connect(audioContext.destination);
+
+          source.onended = function () {
+            playing = false;
+            playNextAudio();
+          };
+
+          source.start();
+          playing = true;
+        }
+      });
+  }
+
+  function playNextAudio() {
+    if (audioFiles.length > order && audioFiles[order] != null) {
+      let nextAudioUrl = audioFiles[order];
+      console.log(`play next generated speech chunk ${audioFiles}`);
+      order += 1;
+      loadAndPlayAudio(nextAudioUrl);
+    }
+  }
+
+  function addAudioToQueue(url) {
+    console.log('generate speech chunk: ' + url);
+    //queue.push(url);
+    audioFiles.push(null);
+    let index = audioFiles.length - 1;
+
+    // tell the server to generate the audio
+    fetch(url)
+      .then(response => response.blob())
+      .then(blob => {
+        let url = URL.createObjectURL(blob);
+        audioFiles[index] = url;
+        if (audioContext.state === 'suspended') {
+          audioContext.resume(); // Resume the audio context if needed
+        }
+        if (!playing) {
+          playNextAudio();
+        }
+      });
+  }
+
+  eventSource.onmessage = function (event) {
+    if (event.data === "END_OF_STREAM") {
+      console.log("end of chunk stream");
+      addAudioToQueue(`/text_to_speech?filename=entry${id}-chunk-${count.toString()}.mp3&text=${encodeURIComponent(currentAggregate)}`);
+      eventSource.close();
+    }
+    else { 
+      let li_response = document.getElementById("response" + id);
+      li_response.innerHTML += event.data;
+      currentAggregate += event.data;
+
+      if (/[.!?,:;]$/.test(event.data) && currentAggregate.length >= minLen || currentAggregate.length >= maxLen) {
+        addAudioToQueue(`/text_to_speech?filename=entry${id}-chunk-${count.toString()}.mp3&text=${encodeURIComponent(currentAggregate)}`);
+        count += 1;
+        currentAggregate = "";
+      }
+    }
+  };
+
+  eventSource.addEventListener('customEvent', function (event) {
+    // Handle custom named events if your server sends them
+    console.log('customEvent:', event.data);
+  });
+
+  eventSource.onerror = function () {
+    console.error("EventSource failed:", error);
+    eventSource.close();
+  };
+}
