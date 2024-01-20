@@ -186,7 +186,6 @@ function textChunksToPlayedAudio(id) {
   
   let audioContext = new(window.AudioContext || window.webkitAudioContext)();
   let audioFiles = [];
-  let queue = [];
 
   function loadAndPlayAudio(url) {
     // load the result from the server
@@ -201,7 +200,14 @@ function textChunksToPlayedAudio(id) {
 
           source.onended = function () {
             playing = false;
-            playNextAudio();
+            
+            // no more text chunks coming in and the last audioFile was played => we are done!
+            if (eventSource.readyState == eventSource.CLOSED && order == audioFiles.length-1) {
+              audioFiles = [];
+              location.reload();
+            } else {
+              playNextAudio();
+            }
           };
 
           source.start();
@@ -221,7 +227,6 @@ function textChunksToPlayedAudio(id) {
 
   function addAudioToQueue(url) {
     console.log('generate speech chunk: ' + url);
-    //queue.push(url);
     audioFiles.push(null);
     let index = audioFiles.length - 1;
 
@@ -243,7 +248,9 @@ function textChunksToPlayedAudio(id) {
   eventSource.onmessage = function (event) {
     if (event.data === "END_OF_STREAM") {
       console.log("end of chunk stream");
-      addAudioToQueue(`/text_to_speech?filename=entry${id}-chunk-${count.toString()}.mp3&text=${encodeURIComponent(currentAggregate)}`);
+      if (currentAggregate.length > 0) {
+        addAudioToQueue(`/text_to_speech?filename=entry${id}-chunk-${count.toString()}.mp3&text=${encodeURIComponent(currentAggregate)}`);
+      }
       eventSource.close();
     }
     else { 
@@ -254,7 +261,7 @@ function textChunksToPlayedAudio(id) {
       if (/[.!?,:;]$/.test(event.data) && currentAggregate.length >= minLen || currentAggregate.length >= maxLen) {
         addAudioToQueue(`/text_to_speech?filename=entry${id}-chunk-${count.toString()}.mp3&text=${encodeURIComponent(currentAggregate)}`);
         count += 1;
-        currentAggregate = "";
+        currentAggregate = " ";
       }
     }
   };

@@ -131,7 +131,7 @@ def speech_to_text():
 
 @app.route('/text_to_speech')
 def text_to_speech():
-    """Streams audio generated of a text of the request into a file.
+    """Streams audio (speech), generated of a text contained in the request, into a file.
        The file is send back as response.
 
     Returns:
