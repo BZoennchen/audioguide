@@ -78,21 +78,78 @@ function sendAudioToServer(audioBlob) {
   const formData = new FormData();
   //formData.append("audio", audioBlob);
   formData.append('audio', audioBlob, 'audioToSave.webm')
-  fetch('/ask_question', {
+  fetch('/upload_audio', {
     method: 'POST',
     body: formData
-  })/*.then(response => {
-    if (response.ok) {
-      //location.reload(); // Reloads the current page
-      var audio = document.getElementById('historyList').lastElementChild.querySelector('audio');
-      console.log(document.getElementById('historyList').lastElementChild);
-      //if (audio) {
-        audio.play();
-      //}
-    } else {
-      console.error('Server responded with an error!');
+  }).then(response => {
+    // Handle the response. Possibly the server returns a unique ID for the audio processing task
+    let text = response.text();
+    console.log('reponse: ' + text);
+    return text;
+  }).then(request_file => {
+    // Use this task ID to listen for server-sent events
+    console.log('request_file: ' + request_file);
+    let json = JSON.parse(request_file);
+    let filename = json.request_file
+    let id = json.id
+    listen_for_server_text_response(filename, id);
+    
+  }).catch(error => {
+    console.error('Error:', error);
+  });
+}
+
+function listen_for_server_text_response(filename, id) {
+  // Replace '/ask_question' with your SSE endpoint
+  // You can pass the task ID as a query parameter if needed
+  const eventSource = new EventSource(`/ask_question?filename=${filename}&id=${id}`);
+  let max_len = 200;
+  let current_aggregate = ""
+  let count = 0;
+  let playing = false;
+  let audios = [];
+  eventSource.onmessage = function (event) {
+    console.log('Message:', event.data);
+    console.log("response" + id);
+    let li_response = document.getElementById("response"+id);
+    li_response.innerHTML += event.data;
+    current_aggregate += event.data;
+    
+    if (current_aggregate.length >= max_len) {
+      audios.push(new Audio(`/text_to_speech?filename=${filename + count.toString()}&text=${encodeURIComponent(current_aggregate)}`));
+      current_aggregate = "";
     }
-  })*/;
+    
+    if (!playing && audios.length > 0) {
+      playing = true;
+      let audio = audios.shift();
+      audio.play();
+      audio.addEventListener("ended", audio_ended);
+
+      function audio_ended() { 
+        if (audios.length > 0) {
+          audio = audios.shift();
+          audio.play();
+          audio.addEventListener("ended", audio_ended);
+        }
+      }
+
+      /*audio.addEventListener("ended", function () {
+        audio = new Audio(`/text_to_speech?filename=${filename + count.toString()}&text=${encodeURIComponent(current_aggregate)}`);
+        audio.play();
+      });*/
+    }
+  };
+
+  eventSource.addEventListener('customEvent', function (event) {
+    // Handle custom named events if your server sends them
+    console.log('customEvent:', event.data);
+  });
+
+  eventSource.onerror = function () {
+    console.log('Error occurred.');
+    eventSource.close();
+  };
 }
 
 function visualize(stream) {
@@ -152,7 +209,7 @@ function visualize(stream) {
   }
 }
 
-function playChunk() {
+/*function playChunk() {
   document.getElementById('historyList').lastElementChild.querySelector('audio');
   console.log(document.getElementById('historyList').lastElementChild);
 
@@ -172,6 +229,7 @@ playTimer = setInterval(function () {
   // check the response for new data
   playChunk();
 }, 1000);
+*/
 
 window.onresize = function() {
   canvas.width = mainSection.offsetWidth;

@@ -1,5 +1,5 @@
 import logging
-from flask import Flask, Response, render_template, request, send_from_directory, url_for, redirect, stream_with_context, send_file
+from flask import Flask, Response, render_template, jsonify, request, send_from_directory, url_for, redirect, stream_with_context, send_file
 from turbo_flask import Turbo
 from audioguide import ChatGPT
 import speech2text
@@ -33,39 +33,56 @@ def question_page():
         
     return render_template('questionpage.html', history=history)
 
-@app.route('/ask_question', methods=['POST'])
+@app.route('/ask_question')
 def process_recording():
-    # 1. Audio of the user to audio file
-    timestr = time.strftime("%Y%m%d-%H%M%S")
-    request_file = f'request-{timestr}.webm'
-    audio_file = request.files['audio']
-    audio_file.save(f'audio/requests/{request_file}')
-    audio_file.flush()
-    audio_file.close()
+    filename = request.args.get('filename')
+    id = int(request.args.get('id'))
+    entry = history[id]
+    app.logger.debug(f'/ask_question: {filename}')
+    user_prompt = entry['user_prompt']
     
-    # 2. Audio file to text, i.e. user request
-    user_prompt = speech2text.speech_to_text_openai(f'audio/requests/{request_file}')
-    
-    # 3. User request to chatbot answer
-    entry = {'id': len(history), 'user_prompt': user_prompt, 'response': "", 'user_audio': request_file, 'response_audio': None}
-    entry.update(config)
-    history.append(entry)
-        
+    # 3. User request to chatbot answer        
     gpt = ChatGPT(*config)
     def generate():
         gpt_response = ""
         acc = ""
         for chunk in gpt.question_streamed(user_prompt):
-            gpt_response += chunk
-            acc += chunk
-            entry['response'] = gpt_response
-            yield chunk
+            if chunk != None:
+                gpt_response += chunk
+                acc += chunk
+                entry['response'] = gpt_response
+                app.logger.debug(chunk)
+                yield f'data: {chunk}\n\n'
+        app.logger.debug('End of generation')
         response_file =  f'response-{time.strftime("%Y%m%d-%H%M%S")}.mp3'
+        
         entry['response_audio'] = response_file
         text2speech.text_to_speech_openai(gpt_response, f'audio/responses/{response_file}')
-    
-    return app.response_class(stream_with_context(generate()), mimetype='text/event-stream') 
-    
+        app.logger.debug('Resonsed saved')
+    return Response(generate(), mimetype='text/event-stream') 
+
+@app.route('/upload_audio', methods=['POST'])
+def upload_user_audio_request():
+    if 'audio' in request.files:
+       # 1. Audio of the user to audio file
+        timestr = time.strftime("%Y%m%d-%H%M%S")
+        request_file = f'request-{timestr}.webm'
+        audio_file = request.files['audio']
+        audio_file.save(f'audio/requests/{request_file}')
+        audio_file.flush()
+        audio_file.close()
+        user_prompt = speech2text.speech_to_text_openai(f'audio/requests/{request_file}')
+        
+        id = len(history)
+        entry = {'id': id, 'user_prompt': user_prompt, 'response': "", 'user_audio': request_file, 'response_audio': None}
+        entry.update(config)
+        history.append(entry)
+        turbo.push(turbo.replace(render_template('history.html', history=history), f'responseHistory'))
+        # You can return a unique task ID if you have a background processing task
+        
+        return jsonify({'request_file': request_file, 'id': id}), 200
+    else:
+        return jsonify({'error': 'No audio file found'}), 400    
 
 @app.route('/audio/responses/<path:filename>')
 def download_file(filename):
@@ -108,21 +125,19 @@ def speech_to_text():
     audio_file.save(f'audio/requests/{request_file}')
     audio_file.flush()
     audio_file.close()
-    response = speech2text.speech_to_text_openai(f'audio/requests/{request_file}')
+    response = speech2text.speech_to_text_openai(f'audio/response/{request_file}')
     return response
 
-@app.route('/text_to_speech/<path:filename>')
-def text_to_speech(filename):
+@app.route('/text_to_speech')
+def text_to_speech():
     """Streams audio generated of a text of the request into a file.
        The file is send back as response.
-
-    Args:
-        filename (str): filename where the generated speech is streamed to
 
     Returns:
         the streamed file
     """
     
+    filename = request.args.get('filename')
     text = request.args.get('text')
     text2speech.text_to_speech_openai(text, f'audio/responses/{filename}')
     return send_file(f'audio/responses/{filename}', mimetype='audio/mp3')

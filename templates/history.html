@@ -2,8 +2,9 @@
 <h2>Verlauf</h2>
     <ul id="historyList"> 
         {% for entry in history %} 
-            <li>Anfrage: {{ entry['user_prompt'] }}</li>
-            {% include 'botresponse.html' %}
+        <ul id="entry{{entry['id']}}">
+            <li id="request{{ entry['id'] }}">Anfrage: {{ entry['user_prompt'] }}</li>
+            <li id="response{{ entry['id'] }}">Antwort: {{ entry['response'] }}</li>
             <li>
                 {% if entry['response_audio'] != None %}
                 <audio controls="controls">
@@ -12,6 +13,7 @@
                 </audio>
                 {% endif %}
             </li>
+        </ul>
         {% endfor %} 
     </ul> 
 </div>
