@@ -31,17 +31,18 @@ if (navigator.mediaDevices.getUserMedia) {
         recording_started = true;
         console.log(mediaRecorder.state);
         console.log("recorder started");
-        record_button.style.background = "#e74c3c";
-        record_button.style.color = "white";
+       // record_button.style.background = "#e74c3c";
+       // record_button.style.color = "white";
         record_button.innerText = "Aufnahme beenden"; // to do internationalization
       } else { 
         mediaRecorder.stop();
         recording_started = false;
         console.log(mediaRecorder.state);
         console.log("recorder stopped");
-        record_button.style.background = "#B7E5B4;";
-        record_button.style.color = "black";
+       // record_button.style.background = "#B7E5B4;";
+       // record_button.style.color = "black";
         record_button.innerText = "Aufnahme starten"; // to do internationalization
+        record_button.disabled = true;
       }
     }
 

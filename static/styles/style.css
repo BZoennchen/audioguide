@@ -68,7 +68,7 @@ canvas {
    transition: background-color 0.3s ease, border-color 0.3s ease;
  }
 
- #startButton:hover {
+ #startButton:hover:enabled {
    background-color: #2980b9;
    border-color: #080808;
  }
@@ -102,6 +102,18 @@ canvas {
    color: #fff;
  }
 
+ #recordingButton:disabled,
+ #recordingButton[disabled] {
+   border: 1px solid #999999;
+   background-color: #cccccc;
+   color: #666666;
+ }
+
+#recordingButton:hover:enabled {
+  background-color: #e74c3c;
+  color: white;
+}
+
  #recordingButton {
    background-color: #B7E5B4;
    color: black;
@@ -121,11 +133,6 @@ canvas {
    /* Änderung: Automatische zentrierte Ausrichtung */
    max-width: 80%;
    /* Anpassung: Maximale Breite für den Button */
- }
-
- #recordingButton:hover {
-   background-color: #e74c3c;
-  color: white;
  }
 
  #recordingDuration {
