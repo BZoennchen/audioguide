@@ -1,167 +1,235 @@
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
+/* our style */
 
-html, body {
-  height: 100%;
-}
-
-body {
-  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
-  font-size: 0.8rem;
-}
-
-.wrapper {
-  display: flex;
-  flex-direction: column;
-}
-
-h1, h2 {
-  font-size: 2rem;
-  text-align: center;
-  font-weight: normal;
-  padding: 0.5rem 0 0 0;
-}
-
-.main-controls {
-  padding: 0.5rem 0;
-}
+ body {
+   font-family: 'Montserrat', sans-serif;
+   text-align: center;
+   margin: 0;
+   padding: 0;
+   background-color: #F9F7F7;
+   display: flex;
+   flex-direction: column;
+   min-height: 100vh;
+ }
 
 canvas {
   display: block;
   margin-bottom: 0.5rem;
+  width: 200px;
+  margin-left: auto;
+  margin-right: auto;
+  height: 50px;
+  border: 1px solid #aaa;
+  border-radius: 15px;
 }
+ 
+ header {
+   display: flex;
+   justify-content: space-between;
+   align-items: center;
+   padding: 20px 20px;
+   background-color: #112D4E;
+   color: #fff;
+ }
 
-#buttons {
-  display: flex;
-  flex-direction: row;
-  justify-content: space-between;
-}
+ #languageSelect {
+   margin-left: 20px;
+ }
 
-#buttons button {
-  font-size: 1rem;
-  padding: 1rem;
-  width: calc(50% - 0.25rem);
-}
+ #welcome {
+   font-size: 24px;
+   font-weight: bold;
+   margin-bottom: 70px;
+   margin-top: 70px;
+ }
 
-button {
-  font-size: 1rem;
-  background: #0088cc;
-  text-align: center;
+ #explain {
+   display: inline-block;
+   text-align: left;
+   width: 60%;
+   margin: 50px auto;
+   padding: 20px;
+   /* Änderung: Größerer Innenabstand */
+   border: 2px solid #070707;
+   /* Änderung: Stilisierter Rahmen */
+   border-radius: 8px;
+   background-color: #DBE2EF;
+ }
+
+ #startButton {
+   display: block;
+   margin: 20px auto;
+   padding: 15px 30px;
+   font-size: 18px;
+   background-color: #3498db;
+   color: #fff;
+   border: 2px solid #080808;
+   border-radius: 5px;
+   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+   transition: background-color 0.3s ease, border-color 0.3s ease;
+ }
+
+ #startButton:hover {
+   background-color: #2980b9;
+   border-color: #080808;
+ }
+
+ #popup {
+   display: none;
+   position: fixed;
+   top: 50%;
+   left: 50%;
+   transform: translate(-50%, -50%);
+   background-color: #DBE2EF;
+   padding: 150px;
+   /* Änderung: Größerer Innenabstand */
+   border: 2px solid #080808;
+   /* Änderung: Stilisierter Rahmen */
+   border-radius: 8px;
+   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+   z-index: 1000;
+ }
+
+ #ageInput,
+ #interestSelect {
+   margin-bottom: 20px;
+   /* Änderung: Größerer Abstand zwischen den Elementen */
+ }
+
+ footer {
+   margin-top: auto;
+   padding: 10px 20px;
+   background-color: #112D4E;
+   color: #fff;
+ }
+
+ #recordingButton {
+   background-color: #B7E5B4;
+   color: black;
+   font-size: 16px;
+   border: none;
+   cursor: pointer;
+   margin-bottom: 15px;
+   border: 2px solid #080808;
+   border-radius: 5px;
+   padding: 15px 30px;
+   /* Größeres Padding für den Aufnahme-Button */
+   width: auto;
+   /* Automatische Breite für den Aufnahme-Button */
+   display: block;
+   /* Änderung: Block-Element, um die zentrierte Ausrichtung zu ermöglichen */
+   margin: 0 auto;
+   /* Änderung: Automatische zentrierte Ausrichtung */
+   max-width: 80%;
+   /* Anpassung: Maximale Breite für den Button */
+ }
+
+ #recordingButton:hover {
+   background-color: #e74c3c;
   color: white;
-  border: none;
-  transition: all 0.2s;
-  padding: 0.5rem;
+ }
+
+ #recordingDuration {
+   margin-top: 20px;
+   font-size: 15px;
+   color: #555;
+ }
+
+ #responseWindow {
+   border: 1px solid #ccc;
+   padding: 20px;
+   margin-bottom: 20px;
+   min-height: 100px;
+   background-color: #DBE2EF;
+   border: 2px solid #080808;
+   border-radius: 5px;
+
+   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+   width: 70%;
+   margin-left: auto;
+   margin-right: auto;
+   height: 120px;
+   overflow-y: auto;
+ }
+
+ .audio {
+  margin-bottom: 20px;
+ }
+
+.response {
+  border: 1px solid #ccc;
+  padding: 20px;
+  margin-bottom: 20px;
+  min-height: 20px;
+  background-color: #DBE2EF;
+  border: 2px solid #080808;
+  border-radius: 5px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  width: 70%;
+  margin-left: auto;
+  margin-right: auto;
+  /*max-height: 120px;*/
+  overflow-y:hidden;
+  max-height: 0;
 }
 
-button:hover, button:focus {
-  box-shadow: inset 0px 0px 10px rgba(255, 255, 255, 1);
-  background: #0ae;
+.expanded {
+  max-height: 500px;
+  overflow-y: auto;
 }
 
-button:active {
-  box-shadow: inset 0px 0px 20px rgba(0,0,0,0.5);
-  transform: translateY(2px);
+.shrunk {
+  max-height: 0;
+  overflow-y: hidden;
 }
 
-
-/* Make the clips use as much space as possible, and
- * also show a scrollbar when there are too many clips to show
- * in the available space */
-.sound-clips {
-  flex: 1;
-  overflow: auto;
-}
-
-section, article {
-  display: block;
-}
-
-.clip {
-  padding-bottom: 1rem;
-}
-
-audio {
-  width: 100%;
-  display: block;
-  margin: 1rem auto 0.5rem;
-}
-
-.clip p {
-  display: inline-block;
-  font-size: 1rem;
-}
-
-.clip button {
-  font-size: 1rem;
-  float: right;
-}
-
-button.delete {
-  background: #f00;
-  padding: 0.5rem 0.75rem;
-  font-size: 0.8rem;
-}
-
-/* Checkbox hack to control information box display */
-
-label {
-  font-size: 3rem;
-  position: absolute;
-  top: 2px;
-  right: 3px;
-  z-index: 5;
-  cursor: pointer;
-  background-color: black;
-  border-radius: 10px;
-}
-
-input[type=checkbox] {
-   position: absolute;
-   top: -100px;
-}
-
-aside {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  transform: translateX(100%);
-  transition: 0.3s all ease-out;
-  background-color: #efefef;
-  padding: 1rem;
-}
-
-aside p {
-  font-size: 1.2rem;
-  margin: 0.5rem 0;
-}
-
-aside a {
-  color: #666;
-}
-
-/* Toggled State of information box */
-input[type=checkbox]:checked ~ aside {
-  transform: translateX(0);
-}
-
-/* Cursor when clip name is clicked over */
-
-.clip p {
+.expandable {
+  transition: max-height 1.0s ease-in;
   cursor: pointer;
 }
 
-/* Adjustments for wider screens */
-@media all and (min-width: 800px) {
-  /* Don't take all the space as readability is lost when line length
-     goes past a certain size */
-  .wrapper {
-    width: 90%;
-    max-width: 1000px;
-    margin: 0 auto;
-  }
+.request {
+  border: 1px solid #ccc;
+  padding: 20px;
+  margin-bottom: 20px;
+  background-color: #dbefdc;
+  border: 2px solid #080808;
+  border-radius: 5px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  width: 70%;
+  margin-left: auto;
+  margin-right: auto;
+  max-height: 120px;
+  overflow-y: auto;
 }
+
+ /*#responseHistory {
+   border: 1px solid #ccc;
+   padding: 20px;
+   max-width: 600px;
+   box-sizing: border-box;
+   margin: auto;
+   height: 200px;
+   overflow-y: scroll;
+   text-align: left;
+   background-color: #DBE2EF;
+   border-radius: 8px;
+   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+ }*/
+ 
+ #responseHistory ul {
+    list-style-type: none;
+ }
+
+
+ #loadingPopup {
+   display: none;
+   position: fixed;
+   top: 50%;
+   left: 50%;
+   transform: translate(-50%, -50%);
+   background-color: #DBE2EF;
+   padding: 20px;
+   border-radius: 10px;
+   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+   z-index: 1000;
+ }

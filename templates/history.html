@@ -1,13 +1,21 @@
 <div id="responseHistory">
 <h2>Verlauf</h2>
     <ul id="historyList"> 
-        {% for entry in history %} 
+        {% for entry in history|reverse %} 
         <ul id="entry{{entry['id']}}">
-            <li id="request{{ entry['id'] }}">Anfrage: {{ entry['user_prompt'] }}</li>
-            <li id="response{{ entry['id'] }}">Antwort: {{ entry['response'] }}</li>
+            <li id="request{{ entry['id'] }}">
+                <div class="request shrunk">
+                    {{ entry['user_prompt'] }}
+                </div>
+            </li>
+            <li id="response{{ entry['id'] }}">
+                <div class="response expandable {{'expanded' if loop.first else 'shrunk'}}" onclick="expand.call(this)">
+                    {{ entry['response'] }}
+                </div>
+            </li>
             <li>
                 {% if entry['response_audio'] != None %}
-                <audio controls="controls">
+                <audio class="audio" controls="controls">
                     <source src="{{ 'audio/responses/' + entry['response_audio'] }}">
                     Your browser does not support the audio element.
                 </audio>

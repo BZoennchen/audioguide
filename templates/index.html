@@ -4,56 +4,27 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="preconnect" href="https://fonts.googleapis.com"> 
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin> 
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400&family=Lora&family=Montserrat:wght@300&family=Open+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,300;1,400;1,500;1,600;1,700;1,800&family=Playfair+Display&display=swap" rel="stylesheet">
+    <link type="text/css" rel="stylesheet" href="{{ url_for('static', filename='styles/style.css') }}" />
     <title>Dein persönlicher Audioguide</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            text-align: center;
-            margin: 20px;
-        }
-
-        #welcome {
-            font-size: 24px;
-            font-weight: bold;
-            margin-bottom: 20px;
-        }
-
-        #popup {
-            display: none;
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background-color: #f9f9f9;
-            padding: 20px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            z-index: 1000;
-        }
-
-        #ageInput, #interestSelect {
-            margin-bottom: 10px;
-        }
-    </style>
-    <script>
-        function showPopup() {
-            document.getElementById('popup').style.display = 'block';
-        }
-
-        function closePopupAndRedirect() {
-            // Hier kannst du die Logik für die Weiterleitung implementieren
-            // Zum Beispiel könntest du window.location.href verwenden
-            window.location.href = 'questionpage';
-        }
-
-        function showPopup() {
-            document.getElementById('popup').style.display = 'block';
-        }
-    </script>
 </head>
 <body>
+    <header>
+        <div id="languageSelect">
+            <label for="language">Sprache wählen:</label>
+            <select id="language">
+                <option value="de">Deutsch</option>
+                <option value="en">English</option>
+            </select>
+        </div>
+    </header>
+
     <div>
         <h1 id="welcome">Willkommen bei deinem persönlichen Audioguide!</h1>
-        <button id="startButton" onclick="showPopup()">Starten</button>
+        <div id="explain">Der Audioguide wird sich nach deinen Interessen und Wünschen verhalten und kann dir so ein sehr individuelles Erlebnis ermöglichen. Um dich startklar zu kriegen, müssen wir noch ein paar Einstellungen vornehmen. Drücke auf "Start", um weiter zu machen. Viel Spaß! Julian & Philipp</div>
+        <button id="startButton" onclick="showPopup()">Starte deine Tour!</button>
     </div>
 
     <div id="popup">
@@ -88,10 +59,15 @@
         <input id="finishButton" type="submit" value="Fertig">
     </form>
     </div>
-
-
-    <p>This is the latest output: <span id="latest"></span></p>
-    <p>This is all the output:</p>
-    <ul id="output"></ul>
+    
+    <script>
+        function showPopup() {
+            document.getElementById('popup').style.display = 'block';
+        }
+    </script>
 </body>
+
+<footer>
+    &copy; 2023 Dein persönlicher Audioguide
+</footer>
 </html>

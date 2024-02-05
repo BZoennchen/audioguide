@@ -1,4 +1,5 @@
- <div class="wrapper">
+<!--
+<div class="wrapper">
     <section class="main-controls">
       <canvas class="visualizer" height="60px"></canvas>
       <div id="buttons">
@@ -7,10 +8,12 @@
       </div>
     </section>
 
-    <!--
-    <section class="sound-clips">
-
-    </section>
-    -->
   </div>
   <script src="{{ url_for('static',filename='scripts/recording.js') }} "></script>
+-->
+<section id="main-controls"></section>
+<button id="recordingButton" onclick="toggleRecording()">Aufnahme starten</button>
+<p id="recordingDuration">Aufnahmedauer: 0 Sekunden</p>
+<canvas id="speechVisualizer" height="60px"></canvas>
+</section>
+<script src="{{ url_for('static',filename='scripts/recording.js') }} "></script>

@@ -1,14 +1,11 @@
 // set up basic variables for app
 
-const record = document.querySelector('.record');
-const stop = document.querySelector('.stop');
+const record_button = document.getElementById('recordingButton');
+//const stop = document.querySelector('.stop');
 //const soundClips = document.querySelector('.sound-clips');
-const canvas = document.querySelector('.visualizer');
-const mainSection = document.querySelector('.main-controls');
-
-// disable stop button while not recording
-
-stop.disabled = true;
+const canvas = document.getElementById('speechVisualizer');
+const mainSection = document.getElementById('main-controls');
+let recording_started = false;
 
 // visualiser setup - create web audio api context and canvas
 
@@ -28,26 +25,24 @@ if (navigator.mediaDevices.getUserMedia) {
 
     visualize(stream);
 
-    record.onclick = function() {
-      mediaRecorder.start();
-      console.log(mediaRecorder.state);
-      console.log("recorder started");
-      record.style.background = "red";
-
-      stop.disabled = false;
-      record.disabled = true;
-    }
-
-    stop.onclick = function() {
-      mediaRecorder.stop();
-      console.log(mediaRecorder.state);
-      console.log("recorder stopped");
-      record.style.background = "";
-      record.style.color = "";
-      // mediaRecorder.requestData();
-
-      stop.disabled = true;
-      record.disabled = false;
+    record_button.onclick = function () {
+      if (!recording_started) {
+        mediaRecorder.start();
+        recording_started = true;
+        console.log(mediaRecorder.state);
+        console.log("recorder started");
+        record_button.style.background = "#e74c3c";
+        record_button.style.color = "white";
+        record_button.innerText = "Aufnahme beenden"; // to do internationalization
+      } else { 
+        mediaRecorder.stop();
+        recording_started = false;
+        console.log(mediaRecorder.state);
+        console.log("recorder stopped");
+        record_button.style.background = "#B7E5B4;";
+        record_button.style.color = "black";
+        record_button.innerText = "Aufnahme starten"; // to do internationalization
+      }
     }
 
     mediaRecorder.onstop = function(e) {
@@ -255,7 +250,8 @@ function textChunksToPlayedAudio(id) {
     }
     else { 
       let li_response = document.getElementById("response" + id);
-      li_response.innerHTML += event.data;
+      let div_response = li_response.getElementsByTagName('div')[0];
+      div_response.innerHTML += event.data;
       currentAggregate += event.data;
 
       if (/[.!?,:;]$/.test(event.data) && currentAggregate.length >= minLen || currentAggregate.length >= maxLen) {
@@ -276,3 +272,15 @@ function textChunksToPlayedAudio(id) {
     eventSource.close();
   };
 }
+
+function expand() {
+  const isExpanded = this.classList.contains('expanded');
+  console.log('test');
+  if (isExpanded) {
+    this.classList.remove("expanded");
+    this.classList.add("shrunk");
+  } else {
+    this.classList.add("expanded");
+    this.classList.remove("shrunk");
+  }
+};

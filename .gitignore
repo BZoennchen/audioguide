@@ -2,6 +2,8 @@
 __pycache__/
 *.py[cod]
 *$py.class
+audio/requests/**
+audio/responses/**
 
 # C extensions
 *.so
