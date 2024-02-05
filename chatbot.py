@@ -1,22 +1,23 @@
 import openai
 
 class ChatGPT:
-    def __init__(self, age=16, interests='history', frequency='often') -> None:
+    def __init__(self, age='adult', interests='history', frequency='often') -> None:
         self.client = openai.OpenAI()
         self.dialog = []
         self.agents = ["museum guide", "football commentator", "story teller"]
         self.age = age
         self.interests = interests
         self.frequency = frequency
+        language = 'german'
+        self.system_message = f"You are an audio guide at an art exhibition, describe the works and more about the exhibition in the most interesting way possible. Only answer in {language}. Use a description for a {self.age} who goes to the museum {self.frequency} and are interested in {self.interests}."
+
 
     def construct_prompt(self, user_prompt) -> str:
-        system_message = f"you are an audio guide at an art exhibition, describe the works and more about the exhibition in the most interesting way possible. Use fluent language. Your visitor is {self.age} years old, they go to the museum {self.frequency}, they prefer X language, they want X answers, and they are interested in {self.interests}."
-
         response = self.client.chat.completions.create(
             model="gpt-3.5-turbo",
             messages=[
-                {"role": "system", "content": system_message},
-                {"role": "user", "content": f"Beschreibe fliesend folgende Frage: {user_prompt}"}
+                {"role": "system", "content": self.system_message},
+                {"role": "user", "content": f"Answer the following question: {user_prompt}"}
             ],
         )
         
@@ -24,13 +25,11 @@ class ChatGPT:
         
 
     def construct_prompt_streamed(self, user_prompt) -> str:
-        system_message = f"you are an audio guide at an art exhibition, describe the works and more about the exhibition in the most interesting way possible. Use fluent language. Your visitor is {self.age} years old, they go to the museum {self.frequency}, they prefer X language, they want X answers, and they are interested in {self.interests}."
-
         stream_response = self.client.chat.completions.create(
             model="gpt-3.5-turbo",
             messages=[
-                {"role": "system", "content": system_message},
-                {"role": "user", "content": f"Beschreibe fliesend folgende Frage: {user_prompt}"}
+                {"role": "system", "content": self.system_message},
+                {"role": "user", "content": f"Answer the following question: {user_prompt}"}
             ],
             stream=True
         )
@@ -50,9 +49,9 @@ class ChatGPT:
 # Beispiel für die Verwendung
 if __name__ == "__main__":
     # Hier müsstest du die ausgewählten Optionen aus dem HTML-Formular übergeben
-    age = "erwachsen"
-    interests = "Kunstgeschichte"
-    frequency = "regelmäßig"
+    age = "adult"
+    interests = "biography"
+    frequency = "sometimes"
 
     chat_gpt = ChatGPT(age, interests, frequency)
 

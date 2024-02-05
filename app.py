@@ -23,13 +23,14 @@ def index():
 def question_page():
     if request.method == 'POST':
         # Hier werden die Auswahlmöglichkeiten aus dem Popup verarbeitet
-        age = request.form.get('ageInput')
+        age = request.form.get('age')
         interests = request.form.get('interestSelect')
         frequency = request.form.get('frequenceSelect')
         
         config['age'] = age
         config['interests'] = interests
         config['frequency'] = frequency
+        app.logger.debug(f'config: {config}')
         
     return render_template('questionpage.html', history=history)
 
@@ -41,7 +42,7 @@ def process_recording():
     user_prompt = entry['user_prompt']
     
     # 3. User request to chatbot answer        
-    gpt = ChatGPT(*config)
+    gpt = ChatGPT(age=config['age'], interests=config['interests'], frequency=config['frequency'])
     def generate():
         gpt_response = ""
         acc = ""
