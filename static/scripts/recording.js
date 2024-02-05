@@ -276,7 +276,6 @@ function textChunksToPlayedAudio(id) {
 
 function expand() {
   const isExpanded = this.classList.contains('expanded');
-  console.log('test');
   if (isExpanded) {
     this.classList.remove("expanded");
     this.classList.add("shrunk");

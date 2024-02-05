@@ -5,6 +5,7 @@ from audioguide import ChatGPT
 import speech2text
 import text2speech
 import time
+import os
 
 app = Flask(__name__)
 turbo = Turbo(app)
@@ -143,6 +144,10 @@ def text_to_speech():
     text = request.args.get('text')
     text2speech.text_to_speech_openai(text, f'audio/responses/{filename}')
     return send_file(f'audio/responses/{filename}', mimetype='audio/mp3')
+
+@app.route('/favicon.ico')
+def favicon():
+    return send_from_directory(os.path.join(app.root_path, 'static'), 'favicon.ico', mimetype='image/vnd.microsoft.icon')
 
 if __name__ == '__main__':
     app.run(debug=True)
